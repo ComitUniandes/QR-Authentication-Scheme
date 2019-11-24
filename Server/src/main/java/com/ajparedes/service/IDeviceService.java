@@ -7,5 +7,6 @@ public interface IDeviceService {
 	public abstract void checkDevice(String idDevice, String username) throws Exception;
 
 	public abstract Device isRegistered(String idDevice);
+	public abstract boolean verifyDevice(String device, String user);
 
 }

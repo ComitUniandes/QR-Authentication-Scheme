@@ -35,6 +35,7 @@ public class RestUserController {
 	@Autowired
 	private BCryptPasswordEncoder encoder;
 	
+	//no usado por la app movil
 	@GetMapping
 	public List<User> getAll(){
 		return repo.findAll();
@@ -50,8 +51,8 @@ public class RestUserController {
 	@PostMapping("/login")
 	public ResponseEntity<Object> login(@RequestBody UserLogin ulogin){
 		//TODO: los datos despues llegarán cifrados, decifrar antes de usarlos o que se decifren en el service
-		Optional<User> found = repo.findById(ulogin.getUsername());
-		User u = found.isPresent() ? found.get() : null;
+		
+		User u = service.getUser(ulogin.getUsername());
 		
 		boolean login = service.login(u, ulogin.getPassword());
 		String status = "User Not Authorized Or Incorrect";

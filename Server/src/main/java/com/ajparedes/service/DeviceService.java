@@ -36,5 +36,14 @@ public class DeviceService implements IDeviceService {
 	public void addDevice(Device dev) {
 		repo.save(dev);
 	}
+	@Override
+	public boolean verifyDevice(String device, String user) {
+		// verifica si el dispositivo existe y coincide con el usuario
+		Device d = isRegistered(device);
+		if(d !=null){
+			return d.getUsername().equals(user);
+		}
+		return false;
+	}
 
 }
