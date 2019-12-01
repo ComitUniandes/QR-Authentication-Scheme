@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ajparedes.data.IUserRepository;
+import com.ajparedes.model.ResponseMessage;
 import com.ajparedes.model.User;
 import com.ajparedes.model.UserLogin;
 import com.ajparedes.service.IDeviceService;
@@ -49,7 +50,7 @@ public class RestUserController {
 		repo.save(per);
 	}
 	@PostMapping("/login")
-	public ResponseEntity<Object> login(@RequestBody UserLogin ulogin){
+	public ResponseEntity<ResponseMessage> login(@RequestBody UserLogin ulogin){
 		//TODO: los datos despues llegarán cifrados, decifrar antes de usarlos o que se decifren en el service
 		
 		User u = service.getUser(ulogin.getUsername());
@@ -57,16 +58,16 @@ public class RestUserController {
 		boolean login = service.login(u, ulogin.getPassword());
 		String status = "User Not Authorized Or Incorrect";
 		if(login) {
-			status = "Login Successfull";
+			status = "Login Successful";
 			try{
 			devService.checkDevice(ulogin.getIdDevice(), ulogin.getUsername());
 			}catch (Exception e){
 				status = e.getMessage();
-				return new ResponseEntity<>(status, HttpStatus.FORBIDDEN);
+				return new ResponseEntity<ResponseMessage>(new ResponseMessage(status), HttpStatus.FORBIDDEN);
 			}
 		}
 		
-		return new ResponseEntity<>(status, HttpStatus.OK);
+		return new ResponseEntity<ResponseMessage>(new ResponseMessage(status), HttpStatus.OK);
 	}
 	
 

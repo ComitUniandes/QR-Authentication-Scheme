@@ -1,6 +1,7 @@
 package com.ajparedes.service;
 
 import java.security.SecureRandom;
+import java.sql.Timestamp;
 import java.util.Base64.Encoder;
 import java.util.Date;
 import java.util.Optional;
@@ -62,19 +63,22 @@ public class TokenService implements ITokenService {
 			}
 			else throw new Exception ("Expired Token");
 		}
-		else throw new Exception("The token was alredy used");
+		else throw new Exception("The token is invalid or was alredy used");
 	}
 
 	@Override
-	public Token getToken(int id) {
+	public Token getToken(long id) {
 		Optional<Token> t = repo.findById(id);
 		return t.isPresent() ? t.get() : null;
 	}
 	
 	public boolean compare (Token t1, Token t2) throws Exception{
-		boolean b= t1.equals(t2);
-		System.out.println("compare:"+b);
-		if (b)
+		boolean a = t1.getId() == t2.getId();
+		boolean b = t1.getIdDevice().equals(t2.getIdDevice());
+		boolean c = t1.getIdUser().equals(t2.getIdUser());
+		boolean e = t1.getTokenValue().equals(t2.getTokenValue());
+		System.out.println("compare: " + e);
+		if (a && b && c && e)
 			return b;
 		else
 			throw new Exception("Invalid Token");
