@@ -18,15 +18,15 @@ public class Token {
 	private String idUser;
 	private String idDevice;
 	private String tokenValue;
-	private Date date;
-	//active garantiza que si la fecha de expiracion no ha terminado solo se use una vez el token
-	private boolean active;
+	private Date expDate;
+	//notUsed garantiza que si la fecha de expiracion no ha terminado solo se use una vez el token
+	private boolean notUsed;
 	
 	public Token() {
 		// date establece fecha de expiración 15 minutos a partir de la creación del token
 		long time = new Date().getTime()+ (60 * 1000 * 15);
-		date = new Date(time);
-		active = true;
+		expDate = new Date(time);
+		notUsed = true;
 	}
 	
 	public long getId() {
@@ -54,13 +54,13 @@ public class Token {
 		this.tokenValue = tokenValue;
 	}
 	public Date getDate() {
-		return date;
+		return expDate;
 	}
 	public boolean isActive() {
-		return active;
+		return notUsed;
 	}
 	public void setActive(boolean active) {
-		this.active = active;
+		this.notUsed = active;
 	}
 	
 }
