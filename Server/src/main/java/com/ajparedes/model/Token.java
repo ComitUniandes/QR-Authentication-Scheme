@@ -8,6 +8,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 @Entity
 @Table(name="tokens")
 public class Token {
@@ -18,14 +20,13 @@ public class Token {
 	private String idUser;
 	private String idDevice;
 	private String tokenValue;
-	private Date expDate;
+	private long expDate;
 	//notUsed garantiza que si la fecha de expiracion no ha terminado solo se use una vez el token
 	private boolean notUsed;
 	
 	public Token() {
 		// date establece fecha de expiración 15 minutos a partir de la creación del token
-		long time = new Date().getTime()+ (60 * 1000 * 15);
-		expDate = new Date(time);
+		expDate = new Date().getTime()+ (60 * 1000 * 15);
 		notUsed = true;
 	}
 	
@@ -53,7 +54,7 @@ public class Token {
 	public void setTokenValue(String tokenValue) {
 		this.tokenValue = tokenValue;
 	}
-	public Date getDate() {
+	public long getExpDate() {
 		return expDate;
 	}
 	public boolean isActive() {

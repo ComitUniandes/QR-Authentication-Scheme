@@ -1,7 +1,6 @@
 package com.ajparedes.service;
 
 import java.security.SecureRandom;
-import java.sql.Timestamp;
 import java.util.Base64.Encoder;
 import java.util.Date;
 import java.util.Optional;
@@ -45,7 +44,7 @@ public class TokenService implements ITokenService {
 			token.setTokenValue(generateTokenValue());
 			// agregar a db
 			repo.save(token);
-			return token;
+			return getToken(token.getId());
 		}
 		return null;
 	}
@@ -55,7 +54,8 @@ public class TokenService implements ITokenService {
 	public boolean validate(Token token) throws Exception {
 		Token t = getToken(token.getId());
 		if(t != null && t.isActive()) {
-			Date expDate = t.getDate();
+			System.out.println(t.getExpDate());
+			Date expDate = new Date(t.getExpDate());
 			if(expDate.after(new Date())&& compare(t, token)) {
 				t.setActive(false);
 				repo.save(t);
@@ -76,9 +76,9 @@ public class TokenService implements ITokenService {
 		boolean a = t1.getId() == t2.getId();
 		boolean b = t1.getIdDevice().equals(t2.getIdDevice());
 		boolean c = t1.getIdUser().equals(t2.getIdUser());
+		boolean d = t1.getExpDate() == t2.getExpDate();
 		boolean e = t1.getTokenValue().equals(t2.getTokenValue());
-		System.out.println("compare: " + e);
-		if (a && b && c && e)
+		if (a && b && c && d && e)
 			return b;
 		else
 			throw new Exception("Invalid Token");
