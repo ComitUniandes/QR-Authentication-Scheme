@@ -121,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
                         try {
                             long id = response.getLong("id");
                             String tokenValue =  response.getString("tokenValue");
-                            String expDate = response.getString("date");
+                            String expDate = response.getString("expDate");
                             boolean notUsed = response.getBoolean("active");
 
                             Log.d("MainActivity", "get token: "+tokenValue);
