@@ -3,8 +3,10 @@ package com.ajparedes.qrscheme;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.KeyguardManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Point;
@@ -18,12 +20,15 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.orhanobut.hawk.Hawk;
+import java.net.HttpURLConnection;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -36,10 +41,12 @@ public class MainActivity extends AppCompatActivity {
     private static final int CREDENTIALS_RESULT = 2;
 
     private RequestQueue requestQueue;
+    private int mStatusCode;
 
     private String username;
     private String device;
     private Button btn_token;
+    private Button btn_unlink;
     private ImageView qr_image;
 
     @Override
@@ -50,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
         boolean isLogged = getSharedPreferences("PREFERENCE", MODE_PRIVATE).getBoolean("logged", false);
 
         if(!isLogged){
+            //checkIdentity();
             Intent i = new Intent( MainActivity.this, LoginActivity.class);
             startActivityForResult(i, 1);
         }
@@ -72,6 +80,29 @@ public class MainActivity extends AppCompatActivity {
                 generateToken(username, device);
             }
         });
+        btn_unlink = findViewById(R.id.unlink);
+        btn_unlink.setEnabled(false);
+        btn_unlink.setOnClickListener( new View.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        unlinkDevice();
+                    }
+                });
+                builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.dismiss();
+                    }
+                });
+                AlertDialog alertDialog = builder.create();
+                alertDialog.setTitle("Alert");
+                alertDialog.setMessage("Are you sure you want to sign out and close the app?");
+                alertDialog.show();
+            }
+        });
     }
 
     @Override
@@ -84,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
                 Hawk.put("username", username);
                 getSharedPreferences("PREFERENCE", MODE_PRIVATE).edit().putBoolean("logged", true).commit();
                 btn_token.setEnabled(true);
+                btn_unlink.setEnabled(true);
                 this.username = username;
                 this.device = device;
             }
@@ -92,9 +124,10 @@ public class MainActivity extends AppCompatActivity {
             Log.d("MainActivity","credetinal result code: "+ resultCode);
             if(resultCode == RESULT_OK){
                 btn_token.setEnabled(true);
+                btn_unlink.setEnabled(true);
             }
             else{
-                Toast.makeText(getApplicationContext(), "Please unlock your device to confirm your identity", Toast.LENGTH_LONG);
+                Toast.makeText(getApplicationContext(), "Please unlock your device to confirm your identity", Toast.LENGTH_LONG).show();
                 finish();
             }
         }
@@ -154,6 +187,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void checkIdentity() {
         KeyguardManager keyguardManager = (KeyguardManager) this.getSystemService(Context.KEYGUARD_SERVICE);
+        //TODO verificar que si tenga algo que bloqueee o sino mandar mensaje y cerrar app
         Intent credentialsIntent = keyguardManager.createConfirmDeviceCredentialIntent("Password required", "please enter your pattern to receive your token");
         if (credentialsIntent != null) {
             startActivityForResult(credentialsIntent, CREDENTIALS_RESULT);
@@ -167,5 +201,55 @@ public class MainActivity extends AppCompatActivity {
         display.getSize(size);
         int dimension = size.x >= size.y ? size.y : size.x;
         return dimension;
+    }
+
+    public void unlinkDevice (){
+        final String URL_UNLINK = getString(R.string.base_url) + getString(R.string.gen_unlink_url);
+        Log.d("MainActivity", "unlink device: "+device);
+        JSONObject js = new JSONObject();
+        try {
+            js.put("username", username);
+            js.put("id", device);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, URL_UNLINK, js,
+                new Response.Listener<JSONObject>() {
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            if (mStatusCode == HttpURLConnection.HTTP_OK){
+                               getSharedPreferences("PREFERENCE", MODE_PRIVATE).edit().putBoolean("logged", false).commit();
+                               Hawk.put("username", "");
+                               finish();
+                            }
+                            Toast.makeText(getApplicationContext(), response.getString("response"), Toast.LENGTH_LONG).show();
+                        }catch (JSONException e){
+                            e.printStackTrace();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d("MainActivity", "token volley error: "+error.getMessage());
+                    }
+                })
+        {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                HashMap<String, String> headers = new HashMap<String, String>();
+                headers.put("Content-Type", "application/json; charset=utf-8");
+                return headers;
+            }
+            @Override
+            protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
+                mStatusCode = response.statusCode;
+                return super.parseNetworkResponse(response);
+            }
+        };
+        requestQueue.add(request);
     }
 }

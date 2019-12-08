@@ -20,7 +20,6 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.orhanobut.hawk.Hawk;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -109,7 +108,7 @@ public class LoginActivity extends AppCompatActivity {
                             Log.d("AuthClient", "response string: "+responseMessage);
                             if(responseMessage.equals("Login Successful")){
 
-                                Toast.makeText(getApplicationContext(), responseMessage, Toast.LENGTH_SHORT);
+                                Toast.makeText(getApplicationContext(), responseMessage, Toast.LENGTH_SHORT).show();
                                 //TODO cerrar actividad y mandar a la main
                                 Intent returnIntent = new Intent();
                                 returnIntent.putExtra("username",username);
