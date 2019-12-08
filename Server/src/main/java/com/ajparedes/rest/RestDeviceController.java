@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ajparedes.data.IDeviceRepository;
 import com.ajparedes.model.Device;
+import com.ajparedes.model.ResponseMessage;
 import com.ajparedes.service.IDeviceService;
 
 @RestController
@@ -31,14 +32,25 @@ public class RestDeviceController {
 	}
 	
 	@PostMapping("/unlink")
-	public ResponseEntity<Object> unlinkDevice(@RequestBody Device dev){
+	public ResponseEntity<ResponseMessage> unlinkDevice(@RequestBody Device dev){
 		//TODO verificar si se borra al mandar un usuario diferente al vinculado
+		ResponseMessage message = new ResponseMessage("");
+		HttpStatus status = HttpStatus.NO_CONTENT;
 		Device d = service.isRegistered(dev.getId());
 		if(d!=null && !d.getUsername().equals(dev.getUsername())) {
-			return new ResponseEntity<>("You are not authorized to execute this action", HttpStatus.FORBIDDEN);
+			message.setResponse("You are not authorized to execute this action");
+			status = HttpStatus.FORBIDDEN;
 		}
-		repo.delete(dev);
-		return new ResponseEntity<>("Device successfully unlinked", HttpStatus.OK);
+		else if (d ==null){
+			message.setResponse("Device is not registered");
+			status = HttpStatus.BAD_REQUEST;
+		}else {
+			repo.delete(dev);
+			message.setResponse("Device successfuly unlinked");
+			status = HttpStatus.OK;
+		}
+		
+		return new ResponseEntity<>(message, status);
 	}
 	
 	//llega comando de generar qr en controlador de token	
