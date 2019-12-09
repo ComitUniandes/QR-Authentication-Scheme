@@ -21,14 +21,18 @@ public class RestTokenController {
 	
 	//Obtener nuevo token
 	@PostMapping("/generate")
-	public Token getNewToken(@RequestBody UserLogin ulogin){
+	public ResponseEntity<Token> getNewToken(@RequestBody UserLogin ulogin){
 		// el objeto ulogin debe venir sin password
 		//TODO dar un estado de 403 http si no se logra 
-		return service.createToken(ulogin.getUsername(), ulogin.getIdDevice());
+		Token t = service.createToken(ulogin.getUsername(), ulogin.getIdDevice());
+		if(t==null) {
+			return new ResponseEntity<>(t, HttpStatus.FORBIDDEN);
+		}
+		return new ResponseEntity<>(t, HttpStatus.OK);
 	}
 	
 	@PostMapping("/validate")
-	public ResponseEntity<Object> validateToken(@RequestBody Token token){
+	public ResponseEntity<String> validateToken(@RequestBody Token token){
 		try{
 			service.validate(token);
 			return new ResponseEntity<>("Valid token", HttpStatus.OK);
