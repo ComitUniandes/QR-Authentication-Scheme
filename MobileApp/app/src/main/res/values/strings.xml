@@ -10,7 +10,7 @@
     <string name="invalid_password">Password must be >5 characters</string>
     <string name="login_failed">"Login failed"</string>
     <string name="prompt_username">Username</string>
-    <string name="base_url">http://192.168.0.4:8080/</string>
+    <string name="base_url">https://192.168.0.4:8080/</string>
     <string name="login_url">users/login</string>
 
     <!-- TODO: Remove or change this placeholder text -->
