@@ -51,8 +51,6 @@ public class RestUserController {
 	}
 	@PostMapping("/login")
 	public ResponseEntity<ResponseMessage> login(@RequestBody UserLogin ulogin){
-		//TODO: los datos despues llegarán cifrados, decifrar antes de usarlos o que se decifren en el service
-		
 		User u = service.getUser(ulogin.getUsername());
 		
 		boolean login = service.login(u, ulogin.getPassword());
@@ -63,12 +61,8 @@ public class RestUserController {
 			devService.checkDevice(ulogin.getIdDevice(), ulogin.getUsername());
 			}catch (Exception e){
 				status = e.getMessage();
-				return new ResponseEntity<ResponseMessage>(new ResponseMessage(status), HttpStatus.FORBIDDEN);
 			}
 		}
-		
 		return new ResponseEntity<ResponseMessage>(new ResponseMessage(status), HttpStatus.OK);
 	}
-	
-
 }
