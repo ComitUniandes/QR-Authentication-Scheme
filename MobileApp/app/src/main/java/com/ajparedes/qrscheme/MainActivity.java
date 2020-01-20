@@ -26,7 +26,6 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.StringRequest;
 import com.orhanobut.hawk.Hawk;
 import java.net.HttpURLConnection;
 
@@ -36,19 +35,49 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * ---------------------------------------------------------------------------------------
+ * QRAuth
+ * Aplicación cliente de esquema te autenticación mediante generación de códigos QR
+ * Por Andrea Paredes
+ * Versión 1.0 - Enero 2020
+ * ---------------------------------------------------------------------------------------
+ *
+ * MainActivity:
+ * Actividad encargada de manejar los servicios de solicitud de generación de tokens y
+ * cierre de sesión/desvinculación de dispositivo de la cuenta de usuario.
+ */
 public class MainActivity extends AppCompatActivity {
+    //------------------------------------------------------
+    // CONSTANTES
+    //------------------------------------------------------
     private static final int LOGIN_RESULT = 1;
     private static final int CREDENTIALS_RESULT = 2;
 
+    //------------------------------------------------------
+    // ATRIBUTOS
+    //------------------------------------------------------
     private RequestQueue requestQueue;
     private int mStatusCode;
-
     private String username;
     private String device;
     private Button btn_token;
     private Button btn_unlink;
     private ImageView qr_image;
 
+    //------------------------------------------------------
+    // MÉTODOS
+    //------------------------------------------------------
+
+    /**
+     * onCreate se encarga de:
+     * inicializar la vista e la actividad.
+     * Obtener la instancia de la cola de peticiones.
+     * Verificar si ya se ha iniciado sesión en el dispositivo, en caso afirmativo ctiva las
+     * opciones de cierre de sesión y generación de tokens. En caso contrario se inicia la
+     * actividad LoginActivity.
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,8 +85,10 @@ public class MainActivity extends AppCompatActivity {
         Hawk.init(getApplicationContext()).build();
         boolean isLogged = getSharedPreferences("PREFERENCE", MODE_PRIVATE).getBoolean("logged", false);
 
+        if(!isDeviceSecure()){
+            closeApp();
+        }
         if(!isLogged){
-            //checkIdentity();
             Intent i = new Intent( MainActivity.this, LoginActivity.class);
             startActivityForResult(i, 1);
         }
@@ -68,7 +99,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         requestQueue = APIClientSingleton.getInstance(this).getRequestQueue();
-
         setContentView(R.layout.activity_token);
         qr_image = findViewById(R.id.imageViewQR);
         btn_token = findViewById(R.id.buttonToken);
@@ -105,6 +135,17 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Realiza el manejo de los resultados obtenidos por la finalización de actividades.
+     * En caso de proceso de login exitoso se guarda de manera cifrada el nombre de usuario en
+     * medoria del dispositivo y se habilitan los demás servicios.
+     * En caso de desbloqueo del dispositvo exitoso se habilitan los servios de la aplicación, en
+     * caso contrario se solicita de nuevo el desbloqueo de este.
+     *
+     * @param requestCode código de la actividad ejectuda
+     * @param resultCode código de resultado de la actividad
+     * @param data datos enviados por la actividad que finaliza
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
@@ -121,7 +162,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         if (requestCode == CREDENTIALS_RESULT){
-            Log.d("MainActivity","credetinal result code: "+ resultCode);
             if(resultCode == RESULT_OK){
                 btn_token.setEnabled(true);
                 btn_unlink.setEnabled(true);
@@ -133,6 +173,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Método de creación y envío de solicitud de generación de token
+     *
+     * @param username nombre de usuario de quien solicita el token
+     * @param device identificador del dipositivo
+     */
     public void generateToken(final String username, final String device){
         final String URL_GEN_TOKEN = getString(R.string.base_url) + getString(R.string.gen_token_url);
         Log.d("MainActivity", "token user: "+username);
@@ -185,17 +231,33 @@ public class MainActivity extends AppCompatActivity {
         requestQueue.add(request);
     }
 
+    /**
+     * Método para solicitar al usuario realice el desbloqueo del dispositivo para verificar su
+     * propiedad sobre este.
+     */
     public void checkIdentity() {
         KeyguardManager keyguardManager = (KeyguardManager) this.getSystemService(Context.KEYGUARD_SERVICE);
-        //TODO verificar que si tenga algo que bloqueee o sino mandar mensaje y cerrar app
         Intent credentialsIntent = keyguardManager.createConfirmDeviceCredentialIntent("Password required", "please enter your pattern to receive your token");
         if (credentialsIntent != null) {
             startActivityForResult(credentialsIntent, CREDENTIALS_RESULT);
         }
     }
 
-    public int getDimension(){
+    /**
+     * Metodo para verificar que el dispositivo cuente con un mecanismo de bloqueo habilitado.
+     *
+     * @return true en caso afirmativo, false en caso contrario.
+     */
+    public boolean isDeviceSecure(){
+        KeyguardManager keyguardManager = (KeyguardManager) this.getSystemService(Context.KEYGUARD_SERVICE);
+        return  keyguardManager.isDeviceSecure();
+    }
 
+    /**
+     * Método para obtener las dimensiones de la pantalla del dispositivo
+     * @return la menor dimensión de la pantalla
+     */
+    public int getDimension(){
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
@@ -203,6 +265,10 @@ public class MainActivity extends AppCompatActivity {
         return dimension;
     }
 
+    /**
+     * Método para crear y enviar la solicitud de desvinculación entre cuenta de usuario y el
+     * dispositivo. Si la desvinculación es exitosa la sesión del usuario es cerrada.
+     */
     public void unlinkDevice (){
         final String URL_UNLINK = getString(R.string.base_url) + getString(R.string.gen_unlink_url);
         Log.d("MainActivity", "unlink device: "+device);
@@ -251,5 +317,22 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         requestQueue.add(request);
+    }
+
+    /**
+     * Método para cerrar la aplicación y notificar al usuario de esto.
+     */
+    public void closeApp(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                finishAffinity();
+                System.exit(0);
+            }
+        });
+        AlertDialog alertDialog = builder.create();
+        alertDialog.setTitle("Alert");
+        alertDialog.setMessage("Your device is not secure. Please set PIN, pattern or password to lock your device.");
+        alertDialog.show();
     }
 }

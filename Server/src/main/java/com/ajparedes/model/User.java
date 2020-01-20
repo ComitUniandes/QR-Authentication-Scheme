@@ -4,16 +4,31 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+/**
+ * ---------------------------------------------------------------------------------------
+ * QRAuth
+ * Aplicación cliente de esquema te autenticación mediante generación de códigos QR
+ * Por Andrea Paredes
+ * Versión 1.0 - Enero 2020
+ * ---------------------------------------------------------------------------------------
+ * User:
+ * Clase que representa la esctructura de la tabla 'user' de la base de datos.
+ */
 @Entity
 @Table(name = "user")
 public class User {
-
+	//------------------------------------------------------
+    // ATRIBUTOS
+    //------------------------------------------------------
 	@Id
 	private String username;
 	private String name;
 	private String password;
 	private boolean access;
-	
+		
+    //------------------------------------------------------
+    // MÉTODOS
+	//------------------------------------------------------
 	public String getName() {
 		return name;
 	}

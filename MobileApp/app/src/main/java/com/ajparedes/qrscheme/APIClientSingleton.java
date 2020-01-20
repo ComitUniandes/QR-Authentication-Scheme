@@ -26,16 +26,43 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
+/**
+ * ---------------------------------------------------------------------------------------
+ * QRAuth
+ * Aplicación cliente de esquema te autenticación mediante generación de códigos QR
+ * Por Andrea Paredes
+ * Versión 1.0 - Enero 2020
+ * ---------------------------------------------------------------------------------------
+ *
+ * APIClientSingleton:
+ * Clase para la creación y manejo de la cola de peticiones HTTP como singleton
+ */
 public class APIClientSingleton {
+    //------------------------------------------------------
+    // ATRIBUTOS
+    //------------------------------------------------------
     private static APIClientSingleton clientInstance;
     private RequestQueue requestQueue;
     private Context appContext;
 
+    //------------------------------------------------------
+    // MÉTODOS
+    //------------------------------------------------------
+
+    /**
+     * Método constructor de la clase.
+     * @param context
+     */
     private APIClientSingleton (Context context){
         this. appContext = context;
         requestQueue = Volley.newRequestQueue(context.getApplicationContext(), new HurlStack(null, getSocketFactory()));
     }
 
+    /**
+     * Método para la obtención de instancia del singleton contenedor de la cola de peticiones
+     * @param context
+     * @return instancia de la cola de peticiones
+     */
     public static synchronized APIClientSingleton getInstance(Context context){
         if(clientInstance==null){
             clientInstance = new APIClientSingleton(context);
@@ -43,9 +70,19 @@ public class APIClientSingleton {
         return clientInstance;
     }
 
+    /**
+     * Método que retorna la cola de peticiones
+     * @return valor de requestQueue
+     */
     public RequestQueue getRequestQueue() {
         return requestQueue;
     }
+
+    /**
+     * Método que configura el contexto de la cola de peticiones para que acepte la conexión y
+     * el certificado digital del servidor en el host especificado
+     * @return objeto de tipo SSLSocketFactory con la configuración deseada
+     */
     private SSLSocketFactory getSocketFactory() {
 
         CertificateFactory cf = null;
@@ -60,17 +97,14 @@ public class APIClientSingleton {
                 caInput.close();
             }
 
-
             String keyStoreType = KeyStore.getDefaultType();
             KeyStore keyStore = KeyStore.getInstance(keyStoreType);
             keyStore.load(null, null);
             keyStore.setCertificateEntry("ca", ca);
 
-
             String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
             tmf.init(keyStore);
-
 
             HostnameVerifier hostnameVerifier = new HostnameVerifier() {
                 @Override
@@ -82,16 +116,13 @@ public class APIClientSingleton {
                 }
             };
 
-
             HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
             SSLContext context = null;
             context = SSLContext.getInstance("TLS");
-
             context.init(null, tmf.getTrustManagers(), null);
             HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
 
             SSLSocketFactory sf = context.getSocketFactory();
-
 
             return sf;
 

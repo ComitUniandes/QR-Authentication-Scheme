@@ -11,9 +11,22 @@ import org.springframework.stereotype.Service;
 import com.ajparedes.data.ITokenRepository;
 import com.ajparedes.model.Token;
 
+/**
+ * ---------------------------------------------------------------------------------------
+ * QRAuth
+ * Aplicación cliente de esquema te autenticación mediante generación de códigos QR
+ * Por Andrea Paredes
+ * Versión 1.0 - Enero 2020
+ * ---------------------------------------------------------------------------------------
+ * TokenService:
+ * Clase que implementa los servicios necesarios para el manejo de los tokens
+ */
 @Service
 public class TokenService implements ITokenService {
 
+	//---------------------------------------------------------------------------------------
+	// ATRIBUTOS
+	//---------------------------------------------------------------------------------------
 	@Autowired
 	private ITokenRepository repo;
 	
@@ -29,27 +42,39 @@ public class TokenService implements ITokenService {
 	@Autowired
 	private Encoder base64;
 	
+	//---------------------------------------------------------------------------------------
+	// MÉTODOS
+	//---------------------------------------------------------------------------------------
+	
+	/**
+	 * Método para crear un nuevo token de acceso.
+	 * @param user nombre de usuario que crea el token
+	 * @param device identificador del dispositivo utilizado por el usuario
+	 * @return el nuevo token creado o null en caso de que la verificación de datos de usuario falle.
+	 */
 	@Override
 	public Token createToken(String user, String device) {
-		// TODO Auto-generated method stub
 		
-		// 1 verificar usuario y dispositivo
 		if (deviceService.verifyDevice(device, user) && userService.isAuthorized(user)){
 			
-			// el id del token lo genera la db
 			Token token = new Token();
 			token.setIdDevice(device);
 			token.setIdUser(user);
-			// el value
 			token.setTokenValue(generateTokenValue());
-			// agregar a db
+			
 			repo.save(token);
 			return getToken(token.getId());
 		}
 		return null;
 	}
 	
-	// busca el token y verifica que no haya expirado, si es usado marca active en false
+	/**
+	 * Método para verificar la autenticidad y validez de un token.
+	 * @param token token a verificar
+	 * @return true en caso de que la validación sea exitosa
+	 * @throws Exception en caso de que el token no sea autentico, haya sido utilizado previamente
+	 * o haya expirado.
+	 */
 	@Override
 	public boolean validate(Token token) throws Exception {
 		Token t = getToken(token.getId());
@@ -66,12 +91,24 @@ public class TokenService implements ITokenService {
 		else throw new Exception("The token is invalid or was alredy used");
 	}
 
+	/**
+	 * Método para solicitar el token con id dado.
+	 * @param id identificador del token a solicitar
+	 * @return el token solicitado o null en caso de no encontrarlo
+	 */
 	@Override
 	public Token getToken(long id) {
 		Optional<Token> t = repo.findById(id);
 		return t.isPresent() ? t.get() : null;
 	}
 	
+	/**
+	 * Método para compara los valores de dos tokens.
+	 * @param t1 token a comparar
+	 * @param t2 segundo token a comparar
+	 * @return true en caso de que sean iguales los tokens
+	 * @throws Exception en caso de que los tokens no posean los mismos valores
+	 */
 	public boolean compare (Token t1, Token t2) throws Exception{
 		boolean a = t1.getId() == t2.getId();
 		boolean b = t1.getIdDevice().equals(t2.getIdDevice());
@@ -84,10 +121,13 @@ public class TokenService implements ITokenService {
 			throw new Exception("Invalid Token");
 	}
 
+	/**
+	 * Método para generar un valor aleatorio seguro que será utilizado como parte del token
+	 * @return String de 32 caracteres con el valor aleatorio
+	 */
 	public String generateTokenValue() {
 	    byte[] randomBytes = new byte[24];
 	    random.nextBytes(randomBytes);
-	    // 32 caracteres
 	    return base64.encodeToString(randomBytes);
 	}
 }
